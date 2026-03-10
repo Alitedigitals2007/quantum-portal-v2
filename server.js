@@ -712,21 +712,20 @@ app.get('/results', async (req, res) => {
         res.status(500).send("Database Error: Make sure your 'results' table exists.");
     }
 });
-// CHANGE THIS:
-app.post('/upload-material', upload.single('file'), async (req, res) => { ... });
-
-// TO THIS:
+// REPLACE LINE 716 WITH THIS:
 app.post('/upload-material', async (req, res) => {
     const { course_code, title, drive_link } = req.body;
+    
     try {
+        // We use the confirmed columns: course_code, title, drive_link
         await pool.query(
             'INSERT INTO materials (course_code, title, drive_link, upload_date) VALUES ($1, $2, $3, NOW())',
             [course_code.toUpperCase(), title, drive_link]
         );
         res.redirect('/materials');
     } catch (err) {
-        console.error(err);
-        res.status(500).send("Database Error");
+        console.error("Upload Error:", err);
+        res.status(500).send("Database Error: Check if the course code exists in the courses table.");
     }
 });
 
