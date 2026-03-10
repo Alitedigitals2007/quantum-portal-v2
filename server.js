@@ -14,7 +14,9 @@ const pool = new Pool({
     idleTimeoutMillis: 60000,       // Keep the connection alive for 1 minute
     max: 10                         // Max connections
 });
-
+const multer = require('multer');
+const storage = multer.memoryStorage(); // 👈 This uses RAM, not a folder!
+const upload = multer({ storage: storage });
 app.set('view engine', 'ejs');
 app.use(express.static('public'));
 
