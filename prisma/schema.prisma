@@ -1,0 +1,30 @@
+model Student {
+  id           Int      @id @default(autoincrement())
+  matricNo     String   @unique
+  fullName     String
+  email        String   @unique
+  password     String
+  level        String   // e.g., 300L
+  semester     Int      @default(1)
+  cgpa         Float    @default(0.0)
+  results      Result[]
+}
+
+model Course {
+  id        Int      @id @default(autoincrement())
+  code      String   @unique
+  title     String
+  unit      Int
+  lecturer  String
+  venue     String
+}
+
+model Result {
+  id         Int     @id @default(autoincrement())
+  student    Student @relation(fields: [matricNo], references: [matricNo])
+  matricNo   String
+  courseCode String
+  test       Int
+  exam       Int
+  grade      String
+}

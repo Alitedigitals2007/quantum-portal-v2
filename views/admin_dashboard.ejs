@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Admin | OS Core</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #0f172a; color: #f8fafc; overflow-x: hidden; }
+        .sidebar { width: 280px; height: 100vh; position: fixed; background: #1e293b; border-right: 1px solid rgba(255,255,255,0.05); z-index: 100; }
+        .main-content { margin-left: 280px; padding: 40px; }
+        .glass-card { background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 24px; padding: 24px; }
+        .nav-link { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-radius: 16px; color: #94a3b8; font-size: 13px; font-weight: 700; transition: 0.3s; margin-bottom: 4px; }
+        .nav-link:hover { background: #334155; color: white; }
+        .nav-link.active { background: #3b82f6; color: white; box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.4); }
+        .quick-action { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; border-radius: 20px; background: #1e293b; border: 1px solid #334155; transition: 0.3s; }
+        .quick-action:hover { border-color: #3b82f6; transform: translateY(-3px); background: #2563eb10; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar p-8">
+        <div class="mb-10 flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-black text-xl">Q</div>
+            <h1 class="text-xl font-black tracking-tighter">ADMIN<span class="text-blue-500">CORE</span></h1>
+        </div>
+
+        <nav class="space-y-1">
+            <a href="/admin/dashboard" class="nav-link active">🏠 Overview</a>
+            <a href="/admin/students" class="nav-link">👥 Students</a>
+            <a href="/admin/courses" class="nav-link">📚 Courses</a>
+            <a href="/admin/timetable" class="nav-link">📅 Timetable</a>
+            <a href="/admin/results" class="nav-link">📊 Results</a>
+            <a href="/admin/materials" class="nav-link">📂 Materials</a>
+            <a href="/admin/announcements" class="nav-link">📢 Announcements</a>
+            <a href="/admin/links" class="nav-link">🔗 Group Links</a>
+        </nav>
+
+        <div class="mt-auto absolute bottom-8 left-8 w-[216px]">
+            <a href="/logout" class="block w-full text-center py-3 bg-red-500/10 text-red-500 rounded-xl text-[10px] font-black uppercase hover:bg-red-500 hover:text-white transition">Terminate session</a>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <header class="flex justify-between items-center mb-12">
+            <div>
+                <h2 class="text-3xl font-black tracking-tight">System Node: <span class="text-blue-500">Active</span></h2>
+                <p class="text-slate-500 font-bold mt-1">Authorized: <%= user.name %></p>
+            </div>
+            <div class="flex items-center gap-4 bg-slate-800 p-2 rounded-2xl border border-slate-700">
+                <div class="px-4 py-2 bg-blue-600/10 text-blue-400 rounded-xl text-[10px] font-black uppercase">Root Access</div>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <div class="glass-card">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Students</p>
+                <h3 class="text-3xl font-black mt-2 text-white"><%= stats.totalStudents %></h3>
+            </div>
+            <div class="glass-card">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Courses</p>
+                <h3 class="text-3xl font-black mt-2 text-blue-500"><%= stats.totalCourses %></h3>
+            </div>
+            <div class="glass-card">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Materials</p>
+                <h3 class="text-3xl font-black mt-2 text-emerald-500"><%= stats.totalMaterials %></h3>
+            </div>
+            <div class="glass-card">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Announcements</p>
+                <h3 class="text-3xl font-black mt-2 text-amber-500"><%= stats.totalAnnouncements %></h3>
+            </div>
+        </div>
+
+        <h4 class="text-xs font-black text-slate-500 uppercase mb-6 tracking-widest">Management Shortcuts</h4>
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
+            <a href="/admin/students" class="quick-action">
+                <span class="text-2xl mb-2">👤</span>
+                <span class="text-[10px] font-black uppercase">Add Student</span>
+            </a>
+            <a href="/admin/courses" class="quick-action">
+                <span class="text-2xl mb-2">📖</span>
+                <span class="text-[10px] font-black uppercase">Add Course</span>
+            </a>
+            <a href="/admin/announcements" class="quick-action">
+                <span class="text-2xl mb-2">📢</span>
+                <span class="text-[10px] font-black uppercase">Post News</span>
+            </a>
+            <a href="/admin/results" class="quick-action">
+                <span class="text-2xl mb-2">📄</span>
+                <span class="text-[10px] font-black uppercase">Upload Result</span>
+            </a>
+            <a href="/admin/timetable" class="quick-action">
+                <span class="text-2xl mb-2">📅</span>
+                <span class="text-[10px] font-black uppercase">Set Schedule</span>
+            </a>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="glass-card">
+                <div class="flex justify-between items-center mb-6">
+                    <h4 class="font-bold uppercase text-xs tracking-widest text-slate-400">Database Stream</h4>
+                    <span class="text-[10px] text-emerald-500 font-bold">LIVE SYNC</span>
+                </div>
+                <div class="space-y-3">
+                    <div class="p-4 bg-slate-900/50 rounded-xl border border-white/5 flex justify-between items-center">
+                        <p class="text-xs font-bold italic">PHY301_Materials.zip</p>
+                        <div class="flex gap-3">
+                            <button class="text-[10px] font-black text-blue-500 hover:underline">APPROVE</button>
+                            <button class="text-[10px] font-black text-red-500 hover:underline">DELETE</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card flex flex-col justify-center items-center border-dashed border-2 border-slate-700 bg-transparent">
+                <p class="text-slate-500 font-bold text-sm mb-4">Export Full Student List (PDF)</p>
+                <button class="text-xs font-black bg-white text-slate-900 px-8 py-3 rounded-xl hover:bg-blue-600 hover:text-white transition">DOWNLOAD LIST</button>
+            </div>
+        </div>
+    </main>
+
+</body>
+</html>

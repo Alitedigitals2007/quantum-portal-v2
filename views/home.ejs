@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Squad | UI Physics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;800&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #f8fafc;
+            color: #1e293b;
+        }
+
+        /* 🔬 CLEAN GLASS EFFECT (Light Mode) */
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        /* ⚛️ ACTIVE WAVE ANIMATION */
+        .wave-container {
+            position: absolute; top: 0; left: 0; width: 100%; height: 300px;
+            background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+            z-index: -1; clip-path: ellipse(100% 50% at 50% 0%);
+        }
+
+        /* 📱 NAVIGATION DOCK (White Edition) */
+        .nav-dock {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            width: 90%; max-width: 400px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            border-radius: 24px;
+            display: flex; justify-content: space-around;
+            padding: 14px; z-index: 100;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .nav-item {
+            display: flex; flex-direction: column; align-items: center;
+            font-size: 10px; font-weight: 600; color: #94a3b8;
+            transition: 0.3s;
+        }
+        .nav-item.active { color: #2563eb; }
+    </style>
+</head>
+<body class="pb-32">
+
+    <div class="wave-container"></div>
+
+    <header class="px-6 pt-10 pb-6 max-w-5xl mx-auto flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-extrabold tracking-tight text-slate-900">Quantum<span class="text-blue-600">Squad</span></h1>
+            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-1">Physics 300L Portal</p>
+        </div>
+        <div class="p-2 bg-blue-50 rounded-xl text-blue-600 font-bold text-sm">
+            UI/26
+        </div>
+    </header>
+
+    <section class="px-6 py-4 grid grid-cols-3 gap-3 max-w-5xl mx-auto">
+        <div class="glass p-5 rounded-3xl text-center">
+            <span class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Nodes</span>
+            <span class="text-xl font-extrabold text-slate-900">124</span>
+        </div>
+        <div class="glass p-5 rounded-3xl text-center">
+            <span class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Intel</span>
+            <span class="text-xl font-extrabold text-blue-600">482</span>
+        </div>
+        <div class="glass p-5 rounded-3xl text-center">
+            <span class="block text-[9px] font-bold text-slate-400 uppercase mb-1">Sync</span>
+            <span class="text-xl font-extrabold text-emerald-500">99%</span>
+        </div>
+    </section>
+
+    <section class="px-6 py-6 max-w-5xl mx-auto">
+        <div class="bg-white border border-slate-200 p-8 rounded-[32px] shadow-sm relative overflow-hidden">
+            <div class="relative z-10">
+                <span class="bg-blue-600 text-white text-[9px] px-3 py-1 rounded-full font-bold uppercase tracking-widest">Command Deck</span>
+                <h2 class="text-4xl font-extrabold mt-6 mb-4 text-slate-900 leading-tight">PHX-300L<br>Central Interface.</h2>
+                <p class="text-slate-500 text-sm leading-relaxed mb-8 max-w-sm">
+                    Access departmental resources, view results, and track academic milestones in real-time.
+                </p>
+                <a href="/login" class="inline-flex items-center justify-center bg-slate-900 text-white px-8 py-4 rounded-2xl font-bold text-sm transition hover:bg-blue-600">
+                    Enter Portal
+                </a>
+            </div>
+            <div class="absolute -right-10 -bottom-10 opacity-[0.03] pointer-events-none">
+                <svg width="300" height="300" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4.5 20.29L5.21 21L12 18L18.79 21L19.5 20.29L12 2Z"/></svg>
+            </div>
+        </div>
+    </section>
+
+    <section class="px-6 py-6 max-w-5xl mx-auto">
+        <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-6 ml-1">Physics Chronicles</h3>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="glass p-6 rounded-3xl group hover:border-blue-400 transition">
+                <span class="text-blue-600 font-mono text-xs font-bold">1687</span>
+                <h4 class="text-xs font-bold text-slate-900 mt-2 uppercase">Newtonian</h4>
+                <p class="text-[10px] text-slate-500 mt-1">Classical Laws of Motion</p>
+            </div>
+            <div class="glass p-6 rounded-3xl group hover:border-purple-400 transition">
+                <span class="text-purple-600 font-mono text-xs font-bold">1865</span>
+                <h4 class="text-xs font-bold text-slate-900 mt-2 uppercase">Maxwellian</h4>
+                <p class="text-[10px] text-slate-500 mt-1">Electromagnetic Fields</p>
+            </div>
+            <div class="glass p-6 rounded-3xl group hover:border-pink-400 transition">
+                <span class="text-pink-600 font-mono text-xs font-bold">1915</span>
+                <h4 class="text-xs font-bold text-slate-900 mt-2 uppercase">Einsteinian</h4>
+                <p class="text-[10px] text-slate-500 mt-1">General Relativity</p>
+            </div>
+            <div class="glass p-6 rounded-3xl group hover:border-emerald-400 transition">
+                <span class="text-emerald-600 font-mono text-xs font-bold">1926</span>
+                <h4 class="text-xs font-bold text-slate-900 mt-2 uppercase">Quantum</h4>
+                <p class="text-[10px] text-slate-500 mt-1">Wave Mechanics</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="px-6 py-6 max-w-5xl mx-auto">
+        <div class="glass p-8 rounded-[32px]">
+            <h3 class="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-8">Quantum Insights</h3>
+            <div class="space-y-8">
+                <div class="flex items-start gap-4">
+                    <div class="w-8 h-8 rounded-full bg-blue-100 flex-shrink-0 flex items-center justify-center text-blue-600 font-bold text-xs">1</div>
+                    <p class="text-xs text-slate-600 leading-relaxed">The sun's light is **8 minutes old** when it hits your eyes. You are essentially seeing the past.</p>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="w-8 h-8 rounded-full bg-purple-100 flex-shrink-0 flex items-center justify-center text-purple-600 font-bold text-xs">2</div>
+                    <p class="text-xs text-slate-600 leading-relaxed">Due to **Time Dilation**, astronauts on the ISS age slightly slower than people on Earth.</p>
+                </div>
+                <div class="flex items-start gap-4">
+                    <div class="w-8 h-8 rounded-full bg-pink-100 flex-shrink-0 flex items-center justify-center text-pink-600 font-bold text-xs">3</div>
+                    <p class="text-xs text-slate-600 leading-relaxed">A **Neutron Star** is so dense that a teaspoon of its material would weigh as much as Mt. Everest.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <nav class="nav-dock">
+        <a href="/" class="nav-item active">
+            <span class="text-xl mb-1">🏠</span>
+            <span>Home</span>
+        </a>
+        <a href="/materials" class="nav-item">
+            <span class="text-xl mb-1">📚</span>
+            <span>Files</span>
+        </a>
+        <a href="/timetable" class="nav-item">
+            <span class="text-xl mb-1">📅</span>
+            <span>Time</span>
+        </a>
+        <a href="/login" class="nav-item">
+            <span class="text-xl mb-1">🔑</span>
+            <span>Portal</span>
+        </a>
+    </nav>
+
+</body>
+</html>

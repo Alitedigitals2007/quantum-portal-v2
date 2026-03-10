@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results | The Quantum Squad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .nav-link { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+        .active-link { color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 4px; }
+        .grade-pill { font-weight: 900; padding: 4px 12px; border-radius: 99px; text-transform: uppercase; font-size: 12px; }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-6xl mx-auto">
+        <nav class="bg-white border border-slate-200 px-8 py-5 rounded-3xl mb-12 flex justify-between items-center shadow-sm sticky top-5 z-50">
+            <div class="text-xl font-black italic tracking-tighter uppercase text-slate-900">
+                THE <span class="text-blue-600">QUANTUM</span> SQUAD
+            </div>
+            <div class="hidden md:flex gap-8 items-center">
+                <a href="/dashboard" class="nav-link text-slate-400">Home</a>
+                <a href="/timetable" class="nav-link text-slate-400">Timetable</a>
+                <a href="/courses" class="nav-link text-slate-400">Courses</a>
+                <a href="/results" class="nav-link active-link">Results</a>
+            </div>
+        </nav>
+
+        <header class="mb-10">
+            <h1 class="text-4xl font-black text-slate-900 tracking-tight uppercase italic">Academic <span class="text-blue-600">Performance</span></h1>
+            <p class="text-slate-400 font-bold mt-2 uppercase text-[9px] tracking-[0.4em]">Semester Grade Point Average (GPA) Tracking</p>
+        </header>
+
+        <div class="bg-white rounded-[2.5rem] shadow-xl border border-slate-200 overflow-hidden">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-100">
+                        <th class="p-6 text-[10px] font-black uppercase text-slate-400">Course</th>
+                        <th class="p-6 text-[10px] font-black uppercase text-slate-400">Units</th>
+                        <th class="p-6 text-[10px] font-black uppercase text-slate-400 text-center">Score</th>
+                        <th class="p-6 text-[10px] font-black uppercase text-slate-400 text-center">Grade</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% 
+                        let totalUnits = 0;
+                        let totalPoints = 0;
+                        
+                        function getGradePoints(grade) {
+                            const points = { 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1, 'F': 0 };
+                            return points[grade.toUpperCase()] || 0;
+                        }
+
+                        if (results && results.length > 0) { 
+                            results.forEach(row => { 
+                                totalUnits += parseInt(row.units);
+                                totalPoints += (getGradePoints(row.grade) * parseInt(row.units));
+                    %>
+                        <tr class="border-b border-slate-50 hover:bg-blue-50/20 transition-colors">
+                            <td class="p-6">
+                                <div class="text-sm font-black text-blue-600 uppercase tracking-tighter"><%= row.course_code %></div>
+                                <div class="text-[11px] font-bold text-slate-500 uppercase"><%= row.course_title %></div>
+                            </td>
+                            <td class="p-6 font-black text-slate-900"><%= row.units %></td>
+                            <td class="p-6 text-center font-bold text-slate-700"><%= row.score %></td>
+                            <td class="p-6 text-center">
+                                <span class="grade-pill <%= row.grade === 'A' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600' %>">
+                                    <%= row.grade %>
+                                </span>
+                            </td>
+                        </tr>
+                    <% }); } %>
+                </tbody>
+            </table>
+
+            <div class="p-8 bg-blue-600 text-white flex flex-col md:flex-row justify-between items-center gap-6">
+                <div class="flex gap-10">
+                    <div>
+                        <span class="text-[9px] font-black uppercase opacity-70 tracking-widest block">Total Units</span>
+                        <span class="text-2xl font-black italic"><%= totalUnits %></span>
+                    </div>
+                    <div>
+                        <span class="text-[9px] font-black uppercase opacity-70 tracking-widest block">Quality Points</span>
+                        <span class="text-2xl font-black italic"><%= totalPoints %></span>
+                    </div>
+                </div>
+                
+                <div class="bg-white/10 p-4 px-8 rounded-2xl border border-white/20 text-center md:text-right">
+                    <span class="text-[10px] font-black uppercase tracking-[0.2em] block mb-1">Current Semester GPA</span>
+                    <span class="text-5xl font-black tracking-tighter italic">
+                        <%= totalUnits > 0 ? (totalPoints / totalUnits).toFixed(2) : '0.00' %>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

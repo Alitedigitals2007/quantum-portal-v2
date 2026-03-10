@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Management | University Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .input-field { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; outline: none; transition: border 0.2s; }
+        .input-field:focus { border-color: #3b82f6; ring: 2px ring-[#3b82f6]; }
+    </style>
+</head>
+<body class="antialiased">
+
+    <nav class="bg-white border-b border-gray-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
+        <div class="flex items-center gap-4">
+            <span class="text-blue-600 font-bold text-xl uppercase tracking-tight italic">EduPortal</span>
+            <div class="h-6 w-[1px] bg-gray-300 mx-2"></div>
+            <a href="/admin/dashboard" class="text-gray-500 hover:text-blue-600 font-medium text-sm transition">Dashboard</a>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-sm font-medium text-gray-700">Admin: <span class="text-blue-600"><%= user.name %></span></span>
+            <a href="/logout" class="text-xs font-bold text-red-600 border border-red-200 px-3 py-1.5 rounded-lg hover:bg-red-50 transition">Logout</a>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-8">
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Student Directory</h1>
+                <p class="text-gray-500 text-sm mt-1">Manage student records, levels, and academic performance.</p>
+            </div>
+            <div class="flex gap-3">
+                <button onclick="openModal('bulkModal')" class="bg-white border border-gray-300 text-gray-700 px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-gray-50 transition">
+                    Bulk Upload
+                </button>
+                <button onclick="openAddModal()" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg font-semibold text-sm hover:bg-blue-700 shadow-sm shadow-blue-200 transition">
+                    + Add New Student
+                </button>
+            </div>
+        </div>
+
+        <div class="card overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-200">
+                            <th class="p-4 text-xs font-bold text-gray-500 uppercase">Full Name</th>
+                            <th class="p-4 text-xs font-bold text-gray-500 uppercase">Matric Number</th>
+                            <th class="p-4 text-xs font-bold text-gray-500 uppercase">Level</th>
+                            <th class="p-4 text-xs font-bold text-gray-500 uppercase">CGPA</th>
+                            <th class="p-4 text-xs font-bold text-gray-500 uppercase">Password</th>
+                            <th class="p-4 text-xs font-bold text-gray-500 uppercase text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        <% if (students && students.length > 0) { %>
+                            <% students.forEach(student => { %>
+                            <tr class="hover:bg-gray-50 transition-colors">
+                                <td class="p-4">
+                                    <div class="text-sm font-semibold text-gray-900"><%= student.full_name %></div>
+                                    <div class="text-xs text-gray-500"><%= student.email %></div>
+                                </td>
+                                <td class="p-4 text-sm font-medium text-gray-600"><%= student.matric_no %></td>
+                                <td class="p-4">
+                                    <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100 uppercase">
+                                        <%= student.level %>
+                                    </span>
+                                </td>
+                                <td class="p-4 text-sm font-bold text-gray-900"><%= student.current_cgpa %></td>
+                                <td class="p-4 text-xs text-gray-400 font-mono"><%= student.password %></td>
+                                <td class="p-4 text-center">
+                                    <div class="flex justify-center gap-4">
+                                        <button onclick='openEditModal(<%= JSON.stringify(student) %>)' class="text-blue-600 hover:text-blue-800 text-xs font-bold">Edit</button>
+                                        <a href="/admin/students/delete?matric=<%= encodeURIComponent(student.matric_no) %>" 
+                                           onclick="return confirm('Permanently delete this student?')"
+                                           class="text-red-500 hover:text-red-700 text-xs font-bold">Delete</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="6" class="p-12 text-center text-gray-400 italic">No student records found.</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="studentModal" class="fixed inset-0 bg-gray-900/60 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+            <div class="px-8 py-6 border-b border-gray-100">
+                <h2 id="modalTitle" class="text-xl font-bold text-gray-900">Add New Student</h2>
+            </div>
+            <form action="/admin/students/save" method="POST" class="p-8 space-y-5">
+                <input type="hidden" name="isEdit" id="isEdit" value="false">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Full Name</label>
+                        <input type="text" name="full_name" id="f_name" class="input-field" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Matric Number</label>
+                        <input type="text" name="matric_no" id="f_matric" class="input-field" required>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Level</label>
+                        <select name="level" id="f_level" class="input-field bg-white">
+                            <option value="100L">100L</option>
+                            <option value="200L">200L</option>
+                            <option value="300L">300L</option>
+                            <option value="400L">400L</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Current CGPA</label>
+                        <input type="number" step="0.01" name="cgpa" id="f_cgpa" class="input-field" value="0.00">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Email Address</label>
+                        <input type="email" name="email" id="f_email" class="input-field">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Password</label>
+                        <input type="text" name="password" id="f_pass" class="input-field" required>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 pt-4">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition">Save Record</button>
+                    <button type="button" onclick="closeModal('studentModal')" class="flex-1 bg-gray-100 text-gray-600 py-3 rounded-xl font-bold hover:bg-gray-200 transition">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="bulkModal" class="fixed inset-0 bg-gray-900/60 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl p-8">
+            <h2 class="text-xl font-bold text-gray-900 mb-2">Bulk Import</h2>
+            <p class="text-sm text-gray-500 mb-6">Select a CSV file containing student records.</p>
+            
+            <form action="/admin/students/bulk" method="POST" enctype="multipart/form-data" class="space-y-6">
+                <div class="border-2 border-dashed border-gray-200 rounded-xl p-8 text-center hover:border-blue-300 transition cursor-pointer" onclick="document.getElementById('csvFile').click()">
+                    <span class="text-gray-400 text-sm">Click to select CSV file</span>
+                    <input type="file" name="csvFile" id="csvFile" accept=".csv" class="hidden" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition">Start Import</button>
+                <button type="button" onclick="closeModal('bulkModal')" class="w-full text-gray-400 text-xs font-bold uppercase">Go Back</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal(id) { 
+            document.getElementById(id).classList.remove('hidden');
+            document.getElementById(id).classList.add('flex');
+        }
+
+        function closeModal(id) { 
+            document.getElementById(id).classList.add('hidden');
+            document.getElementById(id).classList.remove('flex');
+        }
+
+        function openAddModal() {
+            document.getElementById('modalTitle').innerText = "Add New Student";
+            document.getElementById('isEdit').value = "false";
+            document.getElementById('f_matric').readOnly = false;
+            // Clear inputs
+            ['f_name', 'f_matric', 'f_email', 'f_pass', 'f_cgpa'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('f_cgpa').value = '0.00';
+            openModal('studentModal');
+        }
+
+        function openEditModal(student) {
+            document.getElementById('modalTitle').innerText = "Edit Student Record";
+            document.getElementById('isEdit').value = "true";
+            document.getElementById('f_name').value = student.full_name;
+            document.getElementById('f_matric').value = student.matric_no;
+            document.getElementById('f_matric').readOnly = true; // Matric usually stays fixed
+            document.getElementById('f_level').value = student.level;
+            document.getElementById('f_cgpa').value = student.current_cgpa;
+            document.getElementById('f_email').value = student.email;
+            document.getElementById('f_pass').value = student.password;
+            openModal('studentModal');
+        }
+    </script>
+</body>
+</html>

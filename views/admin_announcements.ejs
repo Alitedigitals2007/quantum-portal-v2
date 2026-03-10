@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Announcements | Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+</head>
+<body class="bg-slate-50 flex min-h-screen">
+
+    <aside class="w-64 bg-slate-950 text-slate-400 flex flex-col h-screen sticky top-0 border-r border-slate-900">
+        <div class="p-8 text-2xl font-black text-white italic">Edu<span class="text-blue-500">Link</span></div>
+        <nav class="flex-1 px-4 space-y-1">
+            <a href="/admin/dashboard" class="flex p-3 rounded-xl text-sm font-medium hover:bg-white/5">Dashboard</a>
+            <a href="/admin/announcements" class="bg-blue-600 text-white flex p-3 rounded-xl text-sm font-bold shadow-lg shadow-blue-900/40">Announcements</a>
+        </nav>
+    </aside>
+
+    <main class="flex-1">
+        <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center">
+            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Broadcast Center</h2>
+            <div class="flex items-center gap-3">
+                <span class="text-xs font-bold text-slate-900"><%= user.name %></span>
+                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold uppercase"><%= user.name[0] %></div>
+            </div>
+        </header>
+
+        <div class="p-8 max-w-5xl mx-auto">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h1 class="text-4xl font-black text-slate-900 tracking-tight">Broadcasts</h1>
+                    <p class="text-slate-500 text-sm">Update students with news, files, and important links.</p>
+                </div>
+                <button onclick="document.getElementById('annModal').style.display='flex'" class="px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold text-sm shadow-xl hover:bg-blue-700 transition">
+                    + New Post
+                </button>
+            </div>
+
+            <div class="space-y-6">
+                <% announcements.forEach(item => { %>
+                <div class="bg-white p-8 rounded-[2rem] border border-slate-200 shadow-sm">
+                    <% if (item.image_url) { %>
+                        <img src="<%= item.image_url %>" class="w-full h-64 object-cover rounded-2xl mb-6 border border-slate-100">
+                    <% } %>
+                    <h2 class="text-2xl font-black text-slate-900 mb-2"><%= item.title %></h2>
+                    <p class="text-slate-600 leading-relaxed mb-6"><%= item.content %></p>
+                    
+                    <div class="flex flex-wrap gap-3">
+                        <% if (item.file_url) { %>
+                            <a href="<%= item.file_url %>" class="px-4 py-2 bg-slate-50 text-slate-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition">Download Attachment</a>
+                        <% } %>
+                        <% if (item.external_link) { %>
+                            <a href="<%= item.external_link %>" target="_blank" class="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white transition">External Link</a>
+                        <% } %>
+                    </div>
+                </div>
+                <% }); %>
+            </div>
+        </div>
+    </main>
+
+    <div id="annModal" class="fixed inset-0 bg-slate-950/80 hidden items-center justify-center p-4 z-50 backdrop-blur-md">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-lg p-10 shadow-2xl">
+            <h2 class="text-3xl font-black text-slate-900 mb-6">Create Broadcast</h2>
+            <form action="/admin/announcements/add" method="POST" enctype="multipart/form-data" class="space-y-4">
+                <input type="text" name="title" placeholder="Announcement Title" class="w-full p-4 border rounded-2xl bg-slate-50" required>
+                <textarea name="content" placeholder="Broadcast details..." class="w-full p-4 border rounded-2xl bg-slate-50 h-32" required></textarea>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">Cover Image</label>
+                        <input type="file" name="image" accept="image/*" class="text-xs">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block">PDF/File Attachment</label>
+                        <input type="file" name="attachment" class="text-xs">
+                    </div>
+                </div>
+
+                <input type="url" name="external_link" placeholder="External Link (https://...)" class="w-full p-4 border rounded-2xl bg-slate-50 text-sm">
+
+                <div class="flex gap-4 pt-4">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-black">Publish Now</button>
+                    <button type="button" onclick="document.getElementById('annModal').style.display='none'" class="flex-1 bg-slate-100 text-slate-500 py-4 rounded-2xl font-black">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+</body>
+</html>

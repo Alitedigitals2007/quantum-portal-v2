@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Grading | Admin Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .sidebar-link:hover { background-color: rgba(255,255,255,0.05); }
+        .input-box { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 14px; outline: none; transition: 0.2s; background: #fff; }
+        .input-box:focus { border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.05); }
+        .modal { display: none; align-items: center; justify-content: center; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 50; backdrop-filter: blur(8px); }
+        .modal.active { display: flex; }
+    </style>
+</head>
+<body class="flex min-h-screen">
+
+    <aside class="w-64 bg-slate-950 text-slate-400 hidden md:flex flex-col sticky top-0 h-screen border-r border-slate-900">
+        <div class="p-8">
+            <span class="text-2xl font-black text-white tracking-tighter italic">Edu<span class="text-blue-500">Link</span></span>
+        </div>
+        <nav class="flex-1 px-4 space-y-1">
+            <a href="/admin/dashboard" class="sidebar-link flex items-center p-3 rounded-xl text-sm font-medium">Dashboard</a>
+            <a href="/admin/students" class="sidebar-link flex items-center p-3 rounded-xl text-sm font-medium">Students</a>
+            <a href="/admin/courses" class="sidebar-link flex items-center p-3 rounded-xl text-sm font-medium">Courses</a>
+            <a href="/admin/timetable" class="sidebar-link flex items-center p-3 rounded-xl text-sm font-medium">Timetable</a>
+            <a href="/admin/results" class="bg-blue-600 text-white flex items-center p-3 rounded-xl text-sm font-bold shadow-xl shadow-blue-900/40">Results & GPA</a>
+        </nav>
+        <div class="p-6 border-t border-slate-900">
+            <a href="/logout" class="text-xs font-bold hover:text-red-400 transition tracking-widest">LOGOUT</a>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col">
+        <header class="bg-white border-b border-slate-200 px-8 py-4 flex justify-between items-center sticky top-0 z-10">
+            <div class="flex items-center gap-3">
+                <span class="bg-blue-600 text-white text-[10px] font-black px-2 py-1 rounded">4.0 SCALE</span>
+                <h2 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Examinations Office</h2>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="text-right">
+                    <p class="text-xs font-bold text-slate-900"><%= user.name %></p>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase">Super Admin</p>
+                </div>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md">
+                    <%= user.name[0] %>
+                </div>
+            </div>
+        </header>
+
+        <div class="p-8 max-w-7xl mx-auto w-full">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
+                <div>
+                    <h1 class="text-4xl font-black text-slate-900 tracking-tight">Grade Records</h1>
+                    <p class="text-slate-500 text-sm mt-1">Record Test scores, Exam scores, or upload totals directly.</p>
+                </div>
+                <div class="flex gap-3 w-full md:w-auto">
+                    <button onclick="openModal('bulkModal')" class="flex-1 md:flex-none px-6 py-3 bg-white border border-slate-300 text-slate-700 rounded-2xl font-bold text-sm hover:bg-slate-50 transition shadow-sm">
+                        Bulk Import
+                    </button>
+                    <button onclick="openModal('singleModal')" class="flex-1 md:flex-none px-6 py-3 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-slate-800 shadow-xl transition">
+                        + New Entry
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white border border-slate-200 rounded-[2rem] shadow-xl shadow-slate-200/50 overflow-hidden">
+                <table class="w-full text-left">
+                    <thead>
+                        <tr class="bg-slate-50/80 border-b border-slate-100">
+                            <th class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">Student Details</th>
+                            <th class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest">Course</th>
+                            <th class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center">CA (Test)</th>
+                            <th class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center">Exam</th>
+                            <th class="p-6 text-[11px] font-black text-blue-600 uppercase tracking-widest text-center bg-blue-50/30">Total</th>
+                            <th class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center">Grade</th>
+                            <th class="p-6 text-[11px] font-black text-slate-400 uppercase tracking-widest text-center">GP</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-50">
+                        <% if (results && results.length > 0) { %>
+                            <% results.forEach(row => { %>
+                            <tr class="hover:bg-blue-50/10 transition-colors group">
+                                <td class="p-6">
+                                    <div class="text-sm font-bold text-slate-900"><%= row.full_name %></div>
+                                    <div class="text-[11px] font-bold text-slate-400 tracking-tight"><%= row.student_matric %></div>
+                                </td>
+                                <td class="p-6 text-sm font-black text-blue-600"><%= row.course_code %></td>
+                                <td class="p-6 text-center text-sm font-medium text-slate-500"><%= row.test_score || 0 %></td>
+                                <td class="p-6 text-center text-sm font-medium text-slate-500"><%= row.exam_score || 0 %></td>
+                                <td class="p-6 text-center text-sm font-black text-blue-700 bg-blue-50/20"><%= row.score %></td>
+                                <td class="p-6 text-center">
+                                    <span class="inline-block px-3 py-1 rounded-full text-[10px] font-black <%= row.grade === 'F' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-700' %>">
+                                        <%= row.grade %>
+                                    </span>
+                                </td>
+                                <td class="p-6 text-center text-sm font-black text-slate-900"><%= parseFloat(row.gp).toFixed(1) %></td>
+                            </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="7" class="p-24 text-center">
+                                    <p class="text-slate-400 font-medium italic">No academic records found in the database.</p>
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <div id="singleModal" class="modal p-4">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-md shadow-2xl overflow-hidden">
+            <div class="p-8 border-b border-slate-50 bg-slate-50/30">
+                <h2 class="text-2xl font-black text-slate-900">Record Grade</h2>
+                <p class="text-xs text-slate-400 font-medium">Fill any field. Total Override takes priority.</p>
+            </div>
+            <form action="/admin/results/save" method="POST" class="p-8 space-y-4">
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase mb-1 block">Student</label>
+                    <select name="student_matric" class="input-box" required>
+                        <option value="">Select Student...</option>
+                        <% students.forEach(s => { %>
+                            <option value="<%= s.matric_no %>"><%= s.full_name %> (<%= s.matric_no %>)</option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-400 uppercase mb-1 block">Course</label>
+                    <select name="course_code" class="input-box" required>
+                        <option value="">Select Course...</option>
+                        <% courses.forEach(c => { %>
+                            <option value="<%= c.course_code %>"><%= c.course_code %></option>
+                        <% }); %>
+                    </select>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase mb-1 block">Test (CA)</label>
+                        <input type="number" name="test_score" placeholder="0" class="input-box">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black text-slate-400 uppercase mb-1 block">Exam</label>
+                        <input type="number" name="exam_score" placeholder="0" class="input-box">
+                    </div>
+                </div>
+                <div class="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                    <label class="text-[10px] font-black text-blue-600 uppercase mb-1 block">Total Override (Optional)</label>
+                    <input type="number" name="total_score" placeholder="Enter final total directly" class="input-box border-blue-200">
+                    <span class="text-[9px] text-blue-400 font-medium mt-1 inline-block">*Priority: If filled, Test+Exam is ignored.</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <input type="text" name="session" placeholder="2025/2026" class="input-box" required>
+                    <select name="semester" class="input-box">
+                        <option value="1st">1st Semester</option>
+                        <option value="2nd">2nd Semester</option>
+                    </select>
+                </div>
+                <div class="flex gap-3 pt-6">
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-4 rounded-2xl font-bold text-sm shadow-lg shadow-blue-200">Save Record</button>
+                    <button type="button" onclick="closeModal('singleModal')" class="flex-1 bg-slate-100 text-slate-500 py-4 rounded-2xl font-bold text-sm">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="bulkModal" class="modal p-4">
+        <div class="bg-white rounded-[2.5rem] w-full max-w-sm p-10 text-center shadow-2xl">
+            <h2 class="text-2xl font-black text-slate-900 mb-2">Bulk Upload</h2>
+            <p class="text-[10px] text-slate-400 mb-8 font-bold leading-relaxed uppercase tracking-widest">
+                CSV: matric, course_code, test_score, exam_score, total_score, session, semester
+            </p>
+            <form action="/admin/results/bulk" method="POST" enctype="multipart/form-data">
+                <input type="file" name="csvFile" id="csvIn" class="hidden" required>
+                <div onclick="document.getElementById('csvIn').click()" class="border-4 border-dashed border-slate-100 rounded-[2rem] p-10 cursor-pointer hover:border-blue-200 hover:bg-blue-50 transition mb-6">
+                    <span class="text-sm text-slate-400 font-black uppercase">Select CSV</span>
+                </div>
+                <button type="submit" class="w-full bg-slate-900 text-white py-4 rounded-2xl font-bold text-sm shadow-xl">Start Import</button>
+                <button type="button" onclick="closeModal('bulkModal')" class="mt-4 text-[10px] font-black text-slate-300 uppercase">Close</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        window.onclick = function(e) { if(e.target.classList.contains('modal')) closeModal(e.target.id); }
+    </script>
+</body>
+</html>

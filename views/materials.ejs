@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Materials | The Quantum Squad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
+        .material-card { transition: all 0.3s ease; border: 1px solid #e2e8f0; }
+        .material-card:hover { transform: translateY(-5px); border-color: #2563eb; box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.1); }
+        .nav-link { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
+        .active-link { color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 4px; }
+        #uploadSection { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out; }
+        #uploadSection.open { max-height: 600px; }
+    </style>
+</head>
+<body class="p-4 md:p-10">
+
+    <div class="max-w-7xl mx-auto">
+        <nav class="bg-white border border-slate-200 px-8 py-5 rounded-3xl mb-12 flex justify-between items-center shadow-sm sticky top-5 z-50">
+            <div class="text-xl font-black italic tracking-tighter uppercase text-slate-900">
+                THE <span class="text-blue-600">QUANTUM</span> SQUAD
+            </div>
+            <div class="hidden md:flex gap-8 items-center">
+                <a href="/dashboard" class="nav-link text-slate-400">Home</a>
+                <a href="/timetable" class="nav-link text-slate-400">Timetable</a>
+                <a href="/courses" class="nav-link text-slate-400">Courses</a>
+                <a href="/materials" class="nav-link active-link">Materials</a>
+            </div>
+        </nav>
+
+        <header class="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div>
+                <h1 class="text-4xl font-black text-slate-900 tracking-tight uppercase italic">RESOURCE <span class="text-blue-600">VAULT</span></h1>
+                <p class="text-slate-400 font-bold mt-2 uppercase text-[9px] tracking-[0.4em]">Official Academic Materials & Student Contributions</p>
+            </div>
+            
+            <button onclick="toggleUpload()" class="bg-blue-600 hover:bg-slate-900 text-white px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-blue-100 transition-all active:scale-95 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4" />
+                </svg>
+                Contribute Material
+            </button>
+        </header>
+
+        <div id="uploadSection" class="mb-12">
+            <div class="bg-white p-8 rounded-[2.5rem] border border-blue-100 shadow-xl shadow-blue-50">
+                <form action="/upload-material" method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="text-[9px] font-black uppercase text-slate-400 ml-1">Select Registered Course</label>
+                        <select name="course_code" required 
+                                class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold uppercase text-sm">
+                            <option value="" disabled selected>Choose Course...</option>
+                            <% courseList.forEach(course => { %>
+                                <option value="<%= course.course_code %>"><%= course.course_code %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[9px] font-black uppercase text-slate-400 ml-1">Material Title (e.g. Past Questions 2024)</label>
+                        <input type="text" name="title" required 
+                               class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-bold">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="text-[9px] font-black uppercase text-slate-400 ml-1">Drive Link</label>
+                        <input type="url" name="drive_link" placeholder="https://drive.google.com/..." required 
+                               class="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none text-blue-600">
+                    </div>
+                    <div class="flex items-end">
+                        <button type="submit" class="w-full bg-slate-900 hover:bg-blue-600 text-white font-black py-4 rounded-2xl transition-all uppercase text-[10px] tracking-widest">
+                            Upload to Vault
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <% if (materials && materials.length > 0) { %>
+                <% materials.forEach(file => { %>
+                    <div class="bg-white p-8 rounded-[2.5rem] material-card flex flex-col justify-between h-80 shadow-sm border-t-4 border-t-blue-600">
+                        <div>
+                            <div class="flex justify-between items-center mb-6">
+                                <span class="bg-blue-600 text-white text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest shadow-lg shadow-blue-100">
+                                    <%= file.course_code %>
+                                </span>
+                                <span class="text-slate-300 text-[9px] font-bold uppercase">
+                                    <%= file.upload_date ? new Date(file.upload_date).toLocaleDateString() : 'No Date' %>
+                                </span>
+                            </div>
+
+                            <h2 class="text-2xl font-black text-slate-900 leading-tight uppercase italic break-words">
+                                <%= file.title %>
+                            </h2>
+                        </div>
+
+                        <a href="<%= file.drive_link %>" target="_blank" 
+                           class="w-full bg-slate-900 hover:bg-blue-600 text-white py-5 rounded-2xl transition-all active:scale-95 flex flex-col items-center justify-center gap-1 group shadow-xl shadow-slate-100">
+                            <span class="text-[8px] font-black uppercase opacity-50 tracking-[0.2em] group-hover:text-blue-200 italic">Access Document</span>
+                            <span class="text-[11px] font-black uppercase text-center px-4 truncate w-full">
+                                <%= file.course_code %>: <%= file.title %>
+                            </span>
+                        </a>
+                    </div>
+                <% }); %>
+            <% } else { %>
+                <div class="col-span-full py-24 text-center border-4 border-dashed border-slate-100 rounded-[3rem]">
+                    <div class="text-slate-200 font-black italic text-4xl uppercase tracking-tighter">Vault is Empty</div>
+                </div>
+            <% } %>
+        </div>
+    </div>
+
+    <script>
+        function toggleUpload() {
+            document.getElementById('uploadSection').classList.toggle('open');
+        }
+    </script>
+</body>
+</html>
