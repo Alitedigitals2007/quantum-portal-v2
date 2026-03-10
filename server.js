@@ -4,10 +4,8 @@ const { Pool } = require('pg');
 const path = require('path');
 const session = require('express-session');
 const app = express();
-const multer = require('multer');
 const csv = require('csv-parser');
 const fs = require('fs');
-const upload = multer({ dest: 'uploads/' });
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
@@ -585,16 +583,6 @@ app.post('/admin/materials/add-link', async (req, res) => {
     }
 });
 
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        // Use path.join to ensure the path is solid
-        cb(null, 'public/uploads/announcements'); 
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + '-' + file.originalname);
-    }
-});
-
 // 2. GET Route: View Announcements
 app.get('/admin/announcements', async (req, res) => {
     if (!req.session.user) return res.redirect('/login');
@@ -724,19 +712,22 @@ app.get('/results', async (req, res) => {
         res.status(500).send("Database Error: Make sure your 'results' table exists.");
     }
 });
+// CHANGE THIS:
+app.post('/upload-material', upload.single('file'), async (req, res) => { ... });
+
+// TO THIS:
 app.post('/upload-material', async (req, res) => {
     const { course_code, title, drive_link } = req.body;
-    
     try {
         await pool.query(
-            `INSERT INTO materials (course_code, title, drive_link, upload_date) 
-             VALUES ($1, $2, $3, NOW())`,
+            'INSERT INTO materials (course_code, title, drive_link, upload_date) VALUES ($1, $2, $3, NOW())',
             [course_code.toUpperCase(), title, drive_link]
         );
-        res.redirect('/materials'); // Refresh the page to show the new link
+        res.redirect('/materials');
     } catch (err) {
-        console.error("Upload Error:", err);
-        res.status(500).send("Error adding material. Make sure the link is valid.");
+        console.error(err);
+        res.status(500).send("Database Error");
     }
 });
+
 app.listen(3000, () => console.log('Portal live at http://localhost:3000'));
