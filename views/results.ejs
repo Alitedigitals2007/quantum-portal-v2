@@ -10,7 +10,10 @@
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f8fafc; }
         .nav-link { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; }
         .active-link { color: #2563eb; border-bottom: 2px solid #2563eb; padding-bottom: 4px; }
-        .grade-pill { font-weight: 900; padding: 4px 12px; border-radius: 99px; text-transform: uppercase; font-size: 12px; }
+        .grade-pill { font-weight: 900; padding: 6px 14px; border-radius: 99px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.05em; }
+        
+        /* Custom Table Styling */
+        .glass-row:hover { background: linear-gradient(90deg, rgba(37, 99, 235, 0.03) 0%, rgba(255, 255, 255, 0) 100%); }
     </style>
 </head>
 <body class="p-4 md:p-10">
@@ -21,79 +24,131 @@
                 THE <span class="text-blue-600">QUANTUM</span> SQUAD
             </div>
             <div class="hidden md:flex gap-8 items-center">
-                <a href="/dashboard" class="nav-link text-slate-400">Home</a>
-                <a href="/timetable" class="nav-link text-slate-400">Timetable</a>
-                <a href="/courses" class="nav-link text-slate-400">Courses</a>
+                <a href="/dashboard" class="nav-link text-slate-400 hover:text-blue-600 transition-colors">Home</a>
+                <a href="/timetable" class="nav-link text-slate-400 hover:text-blue-600 transition-colors">Timetable</a>
+                <a href="/courses" class="nav-link text-slate-400 hover:text-blue-600 transition-colors">Courses</a>
                 <a href="/results" class="nav-link active-link">Results</a>
             </div>
         </nav>
 
-        <header class="mb-10">
-            <h1 class="text-4xl font-black text-slate-900 tracking-tight uppercase italic">Academic <span class="text-blue-600">Performance</span></h1>
-            <p class="text-slate-400 font-bold mt-2 uppercase text-[9px] tracking-[0.4em]">Semester Grade Point Average (GPA) Tracking</p>
+        <header class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+                <h1 class="text-4xl font-black text-slate-900 tracking-tight uppercase italic">Academic <span class="text-blue-600">Performance</span></h1>
+                <p class="text-slate-400 font-bold mt-2 uppercase text-[9px] tracking-[0.4em]">4.0 SCALE • Semester Grade Point Tracking</p>
+            </div>
+            <div class="flex items-center gap-3 bg-blue-50 px-4 py-2 rounded-2xl border border-blue-100">
+                <span class="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></span>
+                <span class="text-[10px] font-black text-blue-700 uppercase tracking-widest">Calculated Live</span>
+            </div>
         </header>
 
         <div class="bg-white rounded-[2.5rem] shadow-xl border border-slate-200 overflow-hidden">
-            <table class="w-full text-left border-collapse">
-                <thead>
-                    <tr class="bg-slate-50 border-b border-slate-100">
-                        <th class="p-6 text-[10px] font-black uppercase text-slate-400">Course</th>
-                        <th class="p-6 text-[10px] font-black uppercase text-slate-400">Units</th>
-                        <th class="p-6 text-[10px] font-black uppercase text-slate-400 text-center">Score</th>
-                        <th class="p-6 text-[10px] font-black uppercase text-slate-400 text-center">Grade</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% 
-                        let totalUnits = 0;
-                        let totalPoints = 0;
-                        
-                        function getGradePoints(grade) {
-                            const points = { 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1, 'F': 0 };
-                            return points[grade.toUpperCase()] || 0;
-                        }
-
-                        if (results && results.length > 0) { 
-                            results.forEach(row => { 
-                                totalUnits += parseInt(row.units);
-                                totalPoints += (getGradePoints(row.grade) * parseInt(row.units));
-                    %>
-                        <tr class="border-b border-slate-50 hover:bg-blue-50/20 transition-colors">
-                            <td class="p-6">
-                                <div class="text-sm font-black text-blue-600 uppercase tracking-tighter"><%= row.course_code %></div>
-                                <div class="text-[11px] font-bold text-slate-500 uppercase"><%= row.course_title %></div>
-                            </td>
-                            <td class="p-6 font-black text-slate-900"><%= row.units %></td>
-                            <td class="p-6 text-center font-bold text-slate-700"><%= row.score %></td>
-                            <td class="p-6 text-center">
-                                <span class="grade-pill <%= row.grade === 'A' ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600' %>">
-                                    <%= row.grade %>
-                                </span>
-                            </td>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-100">
+                            <th class="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest">Course Detail</th>
+                            <th class="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Units</th>
+                            <th class="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Score</th>
+                            <th class="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">Grade</th>
+                            <th class="p-6 text-[10px] font-black uppercase text-slate-400 tracking-widest text-center">GP</th>
                         </tr>
-                    <% }); } %>
-                </tbody>
-            </table>
+                    </thead>
+                    <tbody>
+                        <% 
+                            let totalUnits = 0;
+                            let totalPoints = 0;
+                            
+                            // Updated for 4.0 Scale
+                            function getGradePoints4(grade) {
+                                const points = { 'A': 4, 'B': 3, 'C': 2, 'D': 1, 'F': 0 };
+                                return points[grade.toUpperCase()] !== undefined ? points[grade.toUpperCase()] : 0;
+                            }
 
-            <div class="p-8 bg-blue-600 text-white flex flex-col md:flex-row justify-between items-center gap-6">
-                <div class="flex gap-10">
-                    <div>
-                        <span class="text-[9px] font-black uppercase opacity-70 tracking-widest block">Total Units</span>
-                        <span class="text-2xl font-black italic"><%= totalUnits %></span>
+                            function getGradeColor(grade) {
+                                switch(grade.toUpperCase()) {
+                                    case 'A': return 'bg-emerald-100 text-emerald-600 border border-emerald-200';
+                                    case 'B': return 'bg-blue-100 text-blue-600 border border-blue-200';
+                                    case 'C': return 'bg-amber-100 text-amber-600 border border-amber-200';
+                                    case 'D': return 'bg-orange-100 text-orange-600 border border-orange-200';
+                                    default: return 'bg-red-100 text-red-600 border border-red-200';
+                                }
+                            }
+
+                            if (results && results.length > 0) { 
+                                results.forEach(row => { 
+                                    const unit = parseInt(row.units) || 0;
+                                    const gp = getGradePoints4(row.grade);
+                                    totalUnits += unit;
+                                    totalPoints += (gp * unit);
+                        %>
+                            <tr class="border-b border-slate-50 glass-row transition-all">
+                                <td class="p-6">
+                                    <div class="text-sm font-black text-slate-900 uppercase tracking-tighter"><%= row.course_code %></div>
+                                    <div class="text-[10px] font-bold text-slate-400 uppercase tracking-tight"><%= row.course_title || 'General Course' %></div>
+                                </td>
+                                <td class="p-6 text-center font-black text-slate-700"><%= unit %></td>
+                                <td class="p-6 text-center font-bold text-slate-600"><%= row.score %></td>
+                                <td class="p-6 text-center">
+                                    <span class="grade-pill <%= getGradeColor(row.grade) %>">
+                                        <%= row.grade %>
+                                    </span>
+                                </td>
+                                <td class="p-6 text-center font-black text-blue-600"><%= gp.toFixed(1) %></td>
+                            </tr>
+                        <% }); } else { %>
+                            <tr>
+                                <td colspan="5" class="p-20 text-center">
+                                    <div class="text-slate-300 font-black uppercase tracking-[0.3em]">No Results Synchronized</div>
+                                </td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="p-10 bg-slate-900 text-white flex flex-col md:flex-row justify-between items-center gap-10">
+                <div class="flex gap-12">
+                    <div class="relative">
+                        <span class="text-[9px] font-black uppercase text-slate-500 tracking-widest block mb-1">Semester Load</span>
+                        <span class="text-3xl font-black italic"><%= totalUnits %> <span class="text-sm text-slate-500 not-italic">Units</span></span>
                     </div>
                     <div>
-                        <span class="text-[9px] font-black uppercase opacity-70 tracking-widest block">Quality Points</span>
-                        <span class="text-2xl font-black italic"><%= totalPoints %></span>
+                        <span class="text-[9px] font-black uppercase text-slate-500 tracking-widest block mb-1">Quality Points</span>
+                        <span class="text-3xl font-black italic"><%= totalPoints.toFixed(1) %></span>
                     </div>
                 </div>
                 
-                <div class="bg-white/10 p-4 px-8 rounded-2xl border border-white/20 text-center md:text-right">
-                    <span class="text-[10px] font-black uppercase tracking-[0.2em] block mb-1">Current Semester GPA</span>
-                    <span class="text-5xl font-black tracking-tighter italic">
-                        <%= totalUnits > 0 ? (totalPoints / totalUnits).toFixed(2) : '0.00' %>
-                    </span>
+                <% 
+                    const gpa = totalUnits > 0 ? (totalPoints / totalUnits) : 0;
+                    let stand = "Probation";
+                    if (gpa >= 3.5) stand = "First Class";
+                    else if (gpa >= 3.0) stand = "2nd Class Upper";
+                    else if (gpa >= 2.0) stand = "2nd Class Lower";
+                    else if (gpa >= 1.0) stand = "Third Class";
+                %>
+
+                <div class="flex flex-col md:flex-row items-center gap-8 w-full md:w-auto">
+                    <div class="text-center md:text-right">
+                        <span class="text-[10px] font-black uppercase text-blue-400 tracking-[0.3em] block mb-2">Performance Level</span>
+                        <span class="px-4 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-widest">
+                            <%= stand %>
+                        </span>
+                    </div>
+                    <div class="bg-white p-6 px-10 rounded-[2rem] text-center md:text-right shadow-2xl">
+                        <span class="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] block mb-1">Semester GPA</span>
+                        <span class="text-6xl font-black tracking-tighter italic text-slate-900">
+                            <%= gpa.toFixed(2) %>
+                        </span>
+                    </div>
                 </div>
             </div>
+        </div>
+        
+        <div class="mt-8 flex justify-center">
+            <button onclick="window.print()" class="text-[10px] font-black uppercase text-slate-400 tracking-widest hover:text-blue-600 transition-colors">
+                📥 Export Academic Transcript
+            </button>
         </div>
     </div>
 

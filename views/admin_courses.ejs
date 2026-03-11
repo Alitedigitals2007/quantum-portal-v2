@@ -12,6 +12,9 @@
         .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1); }
         .modal { display: none; align-items: center; justify-content: center; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); z-index: 50; backdrop-filter: blur(4px); }
         .modal.active { display: flex; }
+        .badge-c { background: #dbeafe; color: #1e40af; } /* Compulsory - Blue */
+        .badge-e { background: #fef3c7; color: #92400e; } /* Elective - Amber */
+        .badge-r { background: #f3e8ff; color: #6b21a8; } /* Required - Purple */
     </style>
 </head>
 <body class="flex min-h-screen">
@@ -60,6 +63,7 @@
                         <tr>
                             <th class="p-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Code</th>
                             <th class="p-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Title</th>
+                            <th class="p-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Type</th>
                             <th class="p-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest">Lecturer</th>
                             <th class="p-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Units</th>
                             <th class="p-5 text-[11px] font-bold text-slate-400 uppercase tracking-widest text-center">Actions</th>
@@ -70,6 +74,16 @@
                         <tr class="hover:bg-blue-50/20 transition-colors">
                             <td class="p-5 font-bold text-sm text-blue-600"><%= course.course_code %></td>
                             <td class="p-5 text-sm font-semibold text-slate-800"><%= course.course_title %></td>
+                            <td class="p-5 text-sm">
+                                <% 
+                                    let typeClass = 'badge-c';
+                                    if(course.course_type === 'Elective') typeClass = 'badge-e';
+                                    if(course.course_type === 'Required') typeClass = 'badge-r';
+                                %>
+                                <span class="<%= typeClass %> px-2.5 py-1 rounded-lg font-bold text-[10px] uppercase italic">
+                                    <%= course.course_type || 'Compulsory' %>
+                                </span>
+                            </td>
                             <td class="p-5 text-sm text-slate-500"><%= course.lecturer_name || 'Not Assigned' %></td>
                             <td class="p-5 text-center"><span class="bg-slate-100 text-slate-700 px-3 py-1 rounded font-bold text-xs"><%= course.units %></span></td>
                             <td class="p-5">
@@ -94,9 +108,19 @@
             <form action="/admin/courses/save" method="POST" class="p-8 space-y-4">
                 <input type="hidden" name="isEdit" id="isEdit" value="false">
                 
-                <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Course Code</label>
-                    <input type="text" name="course_code" id="m_code" placeholder="e.g. PHY 301" class="input-field" required>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Course Code</label>
+                        <input type="text" name="course_code" id="m_code" placeholder="PHY 301" class="input-field" required>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Course Category</label>
+                        <select name="course_type" id="m_type" class="input-field font-bold">
+                            <option value="Compulsory">Compulsory</option>
+                            <option value="Elective">Elective</option>
+                            <option value="Required">Required</option>
+                        </select>
+                    </div>
                 </div>
                 <div>
                     <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Course Title</label>
@@ -114,7 +138,7 @@
                 </div>
                 
                 <div class="flex gap-3 pt-6">
-                    <button type="submit" class="flex-1 bg-blue-600 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md">Save Changes</button>
+                    <button type="submit" class="flex-1 bg-blue-600 text-white py-3.5 rounded-2xl font-bold text-sm shadow-md transition hover:bg-blue-700">Save Changes</button>
                     <button type="button" onclick="closeModal('courseModal')" class="flex-1 bg-slate-100 text-slate-500 py-3.5 rounded-2xl font-bold text-sm">Cancel</button>
                 </div>
             </form>
@@ -126,7 +150,7 @@
             <h2 class="text-xl font-bold text-slate-900 mb-2">Import Courses</h2>
             <p class="text-xs text-slate-400 mb-8 leading-relaxed">
                 CSV Headers must be: <br>
-                <span class="font-mono text-blue-500">course_code, course_title, lecturer, units</span>
+                <span class="font-mono text-blue-500">course_code, course_title, course_type, lecturer, units</span>
             </p>
             <form action="/admin/courses/bulk" method="POST" enctype="multipart/form-data" class="space-y-4">
                 <input type="file" name="csvFile" id="csvFile" accept=".csv" class="hidden" required>
@@ -148,20 +172,21 @@
             document.getElementById('isEdit').value = "false";
             document.getElementById('m_code').readOnly = false;
             document.getElementById('m_code').style.backgroundColor = "white";
-            // Clear inputs
             ['m_code', 'm_title', 'm_lecturer', 'm_units'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('m_type').value = "Compulsory";
             openModal('courseModal');
         }
 
         function openEditModal(course) {
             document.getElementById('modalTitle').innerText = "Update Course Details";
-            document.getElementById('isEdit').value = "true"; // Tell server to use UPDATE
+            document.getElementById('isEdit').value = "true";
             document.getElementById('m_code').value = course.course_code;
-            document.getElementById('m_code').readOnly = true; // Code cannot be changed during edit
+            document.getElementById('m_code').readOnly = true;
             document.getElementById('m_code').style.backgroundColor = "#f1f5f9";
             
             document.getElementById('m_title').value = course.course_title;
-            document.getElementById('m_lecturer').value = course.lecturer_name;
+            document.getElementById('m_type').value = course.course_type || "Compulsory";
+            document.getElementById('m_lecturer').value = course.lecturer_name || '';
             document.getElementById('m_units').value = course.units;
             openModal('courseModal');
         }

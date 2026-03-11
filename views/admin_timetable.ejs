@@ -2,51 +2,96 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Timetable Manager | Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet">
     <style>
         body { background: #f8fafc; font-family: 'Inter', sans-serif; }
-        .timetable-grid { display: grid; grid-template-columns: 120px repeat(5, 1fr); gap: 1px; background: #e2e8f0; border: 1px solid #e2e8f0; }
-        .cell { background: white; padding: 12px; min-height: 80px; transition: all 0.2s; cursor: pointer; }
-        .cell:hover { background: #f1f5f9; }
-        .header-cell { background: #f8fafc; font-weight: 700; font-size: 11px; text-transform: uppercase; color: #64748b; padding: 15px; text-align: center; }
+        .timetable-grid { 
+            display: grid; 
+            grid-template-columns: 120px repeat(5, 1fr); 
+            gap: 1px; 
+            background: #e2e8f0; 
+            border: 1px solid #e2e8f0; 
+        }
+        .cell { 
+            background: white; 
+            padding: 12px; 
+            min-height: 90px; 
+            transition: all 0.2s; 
+            cursor: pointer; 
+        }
+        .cell:hover { background: #f1f5f9; transform: scale(1.01); z-index: 10; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .header-cell { 
+            background: #f8fafc; 
+            font-weight: 700; 
+            font-size: 11px; 
+            text-transform: uppercase; 
+            color: #64748b; 
+            padding: 15px; 
+            text-align: center; 
+        }
     </style>
 </head>
 <body class="p-8">
 
     <div class="max-w-7xl mx-auto">
-        <header class="flex justify-between items-center mb-8">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
             <div>
-                <h1 class="text-2xl font-black text-slate-900">Department Timetable</h1>
-                <p class="text-slate-500 text-sm">Click any slot to assign a course and venue.</p>
+                <h1 class="text-3xl font-black text-slate-900 tracking-tight">Department Timetable</h1>
+                <p class="text-slate-500 text-sm mt-1">Manage course allocations and venue synchronization.</p>
             </div>
-            <div class="flex gap-4">
-                <form action="/admin/venues/add" method="POST" class="flex gap-2">
-                    <input type="text" name="venue_name" placeholder="New Venue (e.g. LT1)" class="px-4 py-2 border rounded-lg text-sm outline-none focus:border-blue-500" required>
-                    <button type="submit" class="bg-slate-800 text-white px-4 py-2 rounded-lg text-xs font-bold uppercase">Add Venue</button>
+            
+            <div class="flex flex-wrap gap-4">
+                <form action="/admin/venues/add" method="POST" class="flex gap-2 bg-white p-2 rounded-2xl shadow-sm border border-slate-200">
+                    <input type="text" name="venue_name" placeholder="New Venue (e.g. LT1)" 
+                           class="px-4 py-2 text-sm outline-none focus:ring-2 ring-blue-100 rounded-xl border border-transparent focus:border-blue-500" required>
+                    <button type="submit" class="bg-slate-900 text-white px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider hover:bg-blue-600 transition-colors">
+                        Add Venue
+                    </button>
                 </form>
             </div>
         </header>
 
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="bg-white rounded-[32px] shadow-xl shadow-slate-200/60 border border-slate-200 overflow-hidden">
             <div class="timetable-grid">
                 <div class="header-cell">Time</div>
                 <% days.forEach(day => { %>
-                    <div class="header-cell"><%= day %></div>
+                    <div class="header-cell border-l border-slate-100"><%= day %></div>
                 <% }); %>
 
                 <% timeSlots.forEach(slot => { %>
-                    <div class="header-cell border-t flex items-center justify-center bg-slate-50"><%= slot %></div>
+                    <div class="header-cell border-t flex items-center justify-center bg-slate-50 text-[10px] font-black text-slate-400">
+                        <%= slot %>
+                    </div>
+
                     <% days.forEach(day => { 
-                        // Find entry for this specific day and time
                         const entry = timetable.find(t => t.day_of_week === day && t.time_slot === slot);
                     %>
-                        <div class="cell border-t" onclick="openAssignModal('<%= day %>', '<%= slot %>')">
+                        <div class="cell border-t border-l border-slate-100 relative group" 
+                             onclick="openAssignModal('<%= day %>', '<%= slot %>', <%= entry ? 'true' : 'false' %>)">
+                            
                             <% if(entry) { %>
-                                <div class="text-[11px] font-black text-blue-600 uppercase"><%= entry.course_code %></div>
-                                <div class="text-[10px] text-slate-500 font-medium truncate"><%= entry.venue_name %></div>
+                                <div class="flex flex-col h-full justify-between">
+                                    <div>
+                                        <div class="text-[11px] font-black text-blue-600 uppercase tracking-tighter mb-1">
+                                            <%= entry.course_code %>
+                                        </div>
+                                        <div class="text-[10px] text-slate-600 font-semibold leading-tight">
+                                            <%= entry.venue_name %>
+                                        </div>
+                                    </div>
+                                    <div class="opacity-0 group-hover:opacity-100 text-[8px] font-bold text-slate-400 uppercase transition-opacity">
+                                        Edit Slot
+                                    </div>
+                                </div>
                             <% } else { %>
-                                <div class="text-[10px] text-slate-300 italic">Empty</div>
+                                <div class="flex items-center justify-center h-full">
+                                    <div class="text-[9px] text-slate-300 font-bold uppercase tracking-widest group-hover:text-blue-400 transition-colors">
+                                        + Assign
+                                    </div>
+                                </div>
                             <% } %>
                         </div>
                     <% }); %>
@@ -55,18 +100,20 @@
         </div>
     </div>
 
-    <div id="assignModal" class="fixed inset-0 bg-slate-900/60 hidden items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-3xl w-full max-w-sm p-8 shadow-2xl">
-            <h2 class="text-xl font-bold mb-1" id="displayDayTime">Assign Slot</h2>
-            <p class="text-xs text-slate-400 mb-6">Assign a course and location for this period.</p>
+    <div id="assignModal" class="fixed inset-0 bg-slate-900/80 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+        <div class="bg-white rounded-[40px] w-full max-w-sm p-10 shadow-2xl transform transition-all">
+            <div class="mb-8">
+                <h2 class="text-2xl font-black text-slate-900 tracking-tight" id="displayDayTime">Assign Slot</h2>
+                <p class="text-xs text-slate-400 font-medium mt-1">Select a course and venue for this period.</p>
+            </div>
             
-            <form action="/admin/timetable/save" method="POST" class="space-y-4">
+            <form action="/admin/timetable/save" method="POST" class="space-y-5">
                 <input type="hidden" name="day" id="inputDay">
                 <input type="hidden" name="time" id="inputTime">
                 
                 <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Course</label>
-                    <select name="course" class="w-full p-3 border rounded-xl text-sm bg-slate-50" required>
+                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Course Allocation</label>
+                    <select name="course" class="w-full p-4 border border-slate-100 rounded-2xl text-sm bg-slate-50 font-semibold focus:ring-4 ring-blue-50 focus:border-blue-500 outline-none transition-all" required>
                         <option value="">Select Course</option>
                         <% courses.forEach(c => { %>
                             <option value="<%= c.course_code %>"><%= c.course_code %> - <%= c.course_title %></option>
@@ -75,8 +122,8 @@
                 </div>
 
                 <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Venue</label>
-                    <select name="venue" class="w-full p-3 border rounded-xl text-sm bg-slate-50" required>
+                    <label class="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Target Venue</label>
+                    <select name="venue" class="w-full p-4 border border-slate-100 rounded-2xl text-sm bg-slate-50 font-semibold focus:ring-4 ring-blue-50 focus:border-blue-500 outline-none transition-all" required>
                         <option value="">Select Venue</option>
                         <% venues.forEach(v => { %>
                             <option value="<%= v.name %>"><%= v.name %></option>
@@ -84,24 +131,67 @@
                     </select>
                 </div>
 
-                <div class="flex gap-3 pt-4">
-                    <button type="submit" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold text-sm">Update Slot</button>
-                    <button type="button" onclick="closeModal()" class="flex-1 bg-slate-100 text-slate-500 py-3 rounded-xl font-bold text-sm">Cancel</button>
+                <div class="pt-6 space-y-3">
+                    <button type="submit" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] shadow-lg shadow-blue-200 hover:bg-blue-700 transition-all active:scale-[0.98]">
+                        Update Schedule
+                    </button>
+                    
+                    <div class="flex gap-3">
+                        <button type="button" id="clearBtn" onclick="clearSlot()" 
+                                class="flex-1 bg-red-50 text-red-500 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest border border-red-100 hover:bg-red-100 transition-colors hidden">
+                            Clear Slot
+                        </button>
+                        <button type="button" onclick="closeModal()" 
+                                class="flex-1 bg-slate-100 text-slate-500 py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
-        function openAssignModal(day, time) {
-            document.getElementById('displayDayTime').innerText = day + " (" + time + ")";
+        function openAssignModal(day, time, isOccupied) {
+            // Update Modal Text
+            document.getElementById('displayDayTime').innerText = day + " • " + time;
+            
+            // Set Hidden Inputs
             document.getElementById('inputDay').value = day;
             document.getElementById('inputTime').value = time;
-            document.getElementById('assignModal').classList.replace('hidden', 'flex');
+            
+            // Toggle Clear Button Visibility
+            const clearBtn = document.getElementById('clearBtn');
+            if(isOccupied) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+            }
+
+            // Show Modal
+            const modal = document.getElementById('assignModal');
+            modal.classList.replace('hidden', 'flex');
         }
+
         function closeModal() {
-            document.getElementById('assignModal').classList.replace('flex', 'hidden');
+            const modal = document.getElementById('assignModal');
+            modal.classList.replace('flex', 'hidden');
         }
+
+        function clearSlot() {
+            const day = document.getElementById('inputDay').value;
+            const time = document.getElementById('inputTime').value;
+
+            if(confirm(`Are you sure you want to remove the class scheduled for ${day} at ${time}?`)) {
+                // Redirects to the deletion route
+                window.location.href = `/admin/timetable/delete?day=${encodeURIComponent(day)}&time=${encodeURIComponent(time)}`;
+            }
+        }
+
+        // Close modal on escape key
+        window.addEventListener('keydown', (e) => {
+            if(e.key === 'Escape') closeModal();
+        });
     </script>
 </body>
 </html>

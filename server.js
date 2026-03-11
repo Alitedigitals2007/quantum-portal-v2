@@ -1,4 +1,5 @@
 require('dotenv').config();
+
 const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
@@ -7,13 +8,13 @@ const app = express();
 const csv = require('csv-parser');
 const fs = require('fs');
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
-    // 💡 Essential for Neon + High Latency areas
-    connectionTimeoutMillis: 30000, // 30 seconds (gives Neon time to wake up)
-    idleTimeoutMillis: 60000,       // Keep the connection alive for 1 minute
-    max: 10                         // Max connections
+    connectionString: process.env.DATABASE_URL, // or your direct string
+    ssl: {
+        rejectUnauthorized: false 
+    }
 });
+
+
 const multer = require('multer');
 const storage = multer.memoryStorage(); // 👈 This uses RAM, not a folder!
 const upload = multer({ storage: storage });
@@ -50,42 +51,60 @@ app.get('/login', (req, res) => {
     res.render('login', { error: null });
 });
 
-// 2. POST LOGIN LOGIC
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
-    // 🛡️ ADMIN LOGIN CHECK (Hardcoded or from 'admins' table)
     const ADMIN_ID = "123400";
     const ADMIN_PASS = "ayomide2007";
 
     try {
-        // 1. Check if it's the Admin entering
+        // 1. ADMIN CHECK
         if (username === ADMIN_ID && password === ADMIN_PASS) {
+            req.session.userId = 999; // Give admin a dummy ID
             req.session.user = {
+                id: 999,
                 name: "Atilola Israel",
-                role: "SUPER_ADMIN", // This role flag is vital
-                matric: "ADMIN-001",
-                level: "ROOT"
+                role: "SUPER_ADMIN"
             };
-            return res.redirect('/admin/dashboard');
+            // Always save before redirecting
+            return req.session.save(() => res.redirect('/admin/dashboard'));
         }
 
-        // 2. Otherwise, check the Students table in the DB
+        // 2. STUDENT CHECK
         const result = await pool.query('SELECT * FROM students WHERE matric_no = $1', [username]);
 
         if (result.rows.length > 0) {
             const student = result.rows[0];
 
             if (password === student.password) {
+                // IMPORTANT: Set these so the /enroll-course route finds them!
+                req.session.userId = student.id; 
                 req.session.user = {
+                    id: student.id,
                     name: student.full_name,
                     matric: student.matric_no,
-                    level: student.level,
-                    cgpa: student.current_cgpa,
-                    semester: student.semester,
                     role: "STUDENT"
                 };
-                return res.redirect('/dashboard');
+if (password === student.password) {
+    req.session.userId = student.id; 
+    req.session.user = {
+        id: student.id,
+        name: student.full_name,
+        matric: student.matric_no,
+        // CHECK THIS LINE: Ensure it matches your DB column name
+        cgpa: student.current_cgpa, 
+        level: student.level,
+        role: "STUDENT"
+    };
+
+    return req.session.save(() => res.redirect('/dashboard'));
+}
+                // FORCE SAVE to prevent the "Login Required" error on next page
+                return req.session.save((err) => {
+                    if (err) console.error("Session Save Error:", err);
+                    res.redirect('/dashboard');
+                });
+
             } else {
                 return res.render('login', { error: 'Invalid Password' });
             }
@@ -98,6 +117,74 @@ app.post('/login', async (req, res) => {
     }
 });
 
+app.get('/dashboard', async (req, res) => {
+    // 1. Session Guard
+    if (!req.session || !req.session.user) {
+        return res.redirect('/login'); 
+    }
+
+    try {
+        const studentId = req.session.user.id;
+        const studentMatric = req.session.user.matric;
+
+        // 2. Fetch everything from the students table in one go
+        const studentData = await pool.query(
+            `SELECT 
+                current_cgpa, 
+                total_units_passed, 
+                total_registered_units, 
+                full_name AS name 
+             FROM students WHERE id = $1`, 
+            [studentId]
+        );
+        
+        const student = studentData.rows[0];
+        if (!student) return res.redirect('/login');
+
+        // 3. Logic Setup
+        const baseCGPA = parseFloat(student.current_cgpa) || 0;
+        const baseUnits = parseInt(student.total_units_passed) || 0;
+        const registeredUnits = parseInt(student.total_registered_units) || 0; // The "Registered" column
+        const basePoints = baseCGPA * baseUnits;
+
+        // 4. Fetch "New" Results (To update the live CGPA)
+        const newResults = await pool.query(`
+            SELECT 
+                SUM(c.unit) AS added_units,
+                SUM(r.gp * c.unit) AS added_points,
+                COUNT(r.id) AS course_count
+            FROM results r
+            JOIN courses c ON r.course_code = c.course_code
+            WHERE r.student_matric = $1`, [studentMatric]);
+
+        const newRow = newResults.rows[0];
+        const addedUnits = parseInt(newRow.added_units) || 0;
+        const addedPoints = parseFloat(newRow.added_points) || 0;
+
+        // 5. Weighted Calculation
+        const finalUnits = baseUnits + addedUnits;
+        const finalPoints = basePoints + addedPoints;
+        
+        const liveCGPA = finalUnits > 0 
+            ? (finalPoints / finalUnits).toFixed(2) 
+            : baseCGPA.toFixed(2);
+
+        // 6. Send to EJS
+        res.render('dashboard', { 
+            user: student, 
+            stats: { 
+                cgpa: liveCGPA, 
+                units: finalUnits,      // This shows as "Passed"
+                workload: registeredUnits, // This shows as "Registered" (from your table)
+                count: parseInt(newRow.course_count) || 0 
+            } 
+        });
+
+    } catch (err) {
+        console.error("Dashboard Engine Error:", err.message);
+        res.status(500).send("Critical System Error. Check Server Logs.");
+    }
+});
 // 🛠️ ADMIN DASHBOARD ROUTE (The missing piece)
 app.get('/admin/dashboard', async (req, res) => {
     // 1. Security Check
@@ -136,43 +223,6 @@ app.get('/admin/dashboard', async (req, res) => {
     }
 });
 
-app.get('/dashboard', (req, res) => {
-    if (!req.session.user) {
-        return res.redirect('/login');
-    }
-    // Pass the session user to the dashboard view
-    res.render('dashboard', { user: req.session.user });
-});
-
-app.get('/dashboard', async (req, res) => {
-    if (!req.session.user) return res.redirect('/login');
-
-    const today = new Date().toLocaleDateString('en-GB', { weekday: 'long' }); // e.g. "Monday"
-
-    try {
-        // 1. Fetch Today's Classes
-        const timetableRes = await pool.query(
-            'SELECT * FROM timetable WHERE day_of_week = $1 AND level = $2 ORDER BY start_time ASC', 
-            [today, req.session.user.level]
-        );
-
-        // 2. Fetch Global Rank
-        const rankRes = await pool.query(`
-            SELECT rank FROM (
-                SELECT matric_no, RANK() OVER (ORDER BY current_cgpa DESC) as rank
-                FROM students
-            ) as ranking WHERE matric_no = $1`, [req.session.user.matric]);
-
-        res.render('dashboard', { 
-            user: req.session.user, 
-            timetable: timetableRes.rows,
-            rank: rankRes.rows[0].rank 
-        });
-    } catch (err) {
-        console.error(err);
-        res.render('dashboard', { user: req.session.user, timetable: [], rank: 'N/A' });
-    }
-});
 
 // 🛰️ LOGOUT ROUTE
 app.get('/logout', (req, res) => {
@@ -283,22 +333,35 @@ app.get('/admin/students/delete', async (req, res) => {
 });
 
 // --- BULK UPLOAD ---
-app.post('/admin/students/bulk', upload.single('csvFile'), (req, res) => {
+app.post('/admin/students/bulk', upload.single('csvFile'), async (req, res) => {
+    if (!req.file) return res.status(400).send("No file uploaded.");
+
     const rows = [];
-    fs.createReadStream(req.file.path)
+    const { Readable } = require('stream'); 
+
+    // 1. Convert the buffer to a stream
+    const studentStream = Readable.from(req.file.buffer);
+
+    // 2. Start piping (Note: No semicolon at the end of the line below)
+    studentStream
         .pipe(csv())
         .on('data', (data) => rows.push(data))
         .on('end', async () => {
-            for (const row of rows) {
-                await pool.query(
-                    `INSERT INTO students (full_name, matric_no, email, level, password, current_cgpa) 
-                     VALUES ($1, $2, $3, $4, $5, $6) 
-                     ON CONFLICT (matric_no) DO UPDATE SET current_cgpa = EXCLUDED.current_cgpa`,
-                    [row.full_name, row.matric_no, row.email, row.level, row.password, row.cgpa || 0]
-                );
+            try {
+                for (const row of rows) {
+                    await pool.query(
+                        `INSERT INTO students (full_name, matric_no, email, level, password, current_cgpa) 
+                         VALUES ($1, $2, $3, $4, $5, $6) 
+                         ON CONFLICT (matric_no) DO UPDATE SET current_cgpa = EXCLUDED.current_cgpa`,
+                        [row.full_name, row.matric_no, row.email, row.level, row.password, row.cgpa || 0]
+                    );
+                }
+                // ✅ Removed fs.unlinkSync because memory storage doesn't create a physical file
+                res.redirect('/admin/students?success=true');
+            } catch (err) {
+                console.error("Database Error during bulk upload:", err);
+                res.status(500).send("Error saving students to database.");
             }
-            fs.unlinkSync(req.file.path);
-            res.redirect('/admin/students');
         });
 });
 
@@ -317,26 +380,22 @@ app.get('/admin/courses', async (req, res) => {
 });
 
 app.post('/admin/courses/save', async (req, res) => {
-    // 1. Get data from the form
-    const { course_code, course_title, lecturer, units, isEdit } = req.body;
+    // 1. Get ALL data including course_type
+    const { course_code, course_title, lecturer, units, course_type, isEdit } = req.body;
     
     try {
-        // 2. Check the 'isEdit' flag carefully
         if (isEdit === "true" || isEdit === true) {
-            
-            // EXECUTE UPDATE: Find the course by its code and change other details
+            // EXECUTE UPDATE: Now includes course_type
             await pool.query(
-                'UPDATE courses SET course_title=$1, lecturer_name=$2, units=$3 WHERE course_code=$4',
-                [course_title, lecturer, units, course_code]
+                'UPDATE courses SET course_title=$1, lecturer_name=$2, units=$3, course_type=$4 WHERE course_code=$5',
+                [course_title, lecturer, units, course_type, course_code]
             );
             console.log(`Updated: ${course_code}`);
-
         } else {
-            
-            // EXECUTE INSERT: Create a brand new record
+            // EXECUTE INSERT: Now includes course_type
             await pool.query(
-                'INSERT INTO courses (course_code, course_title, lecturer_name, units) VALUES ($1, $2, $3, $4)',
-                [course_code, course_title, lecturer, units]
+                'INSERT INTO courses (course_code, course_title, lecturer_name, units, course_type) VALUES ($1, $2, $3, $4, $5)',
+                [course_code.toUpperCase(), course_title, lecturer, units, course_type]
             );
             console.log(`Added: ${course_code}`);
         }
@@ -346,7 +405,6 @@ app.post('/admin/courses/save', async (req, res) => {
     } catch (err) {
         console.error("Database Error:", err.message);
         
-        // If it's a "Unique Violation" error from Postgres
         if (err.code === '23505') {
             res.status(400).send(`Error: The code "${course_code}" is already assigned to another course.`);
         } else {
@@ -374,25 +432,42 @@ app.get('/admin/courses/delete', async (req, res) => {
 });
 
 // --- BULK CSV UPLOAD ---
-app.post('/admin/courses/bulk', upload.single('csvFile'), (req, res) => {
+app.post('/admin/courses/bulk', upload.single('csvFile'), async (req, res) => {
+    if (!req.file) return res.status(400).send("No file uploaded.");
+
     const rows = [];
-    fs.createReadStream(req.file.path)
+    const { Readable } = require('stream'); 
+
+    // 1. Create stream from buffer (NO semicolon at the end of this line)
+    const courseStream = Readable.from(req.file.buffer)
         .pipe(csv())
         .on('data', (data) => rows.push(data))
         .on('end', async () => {
             try {
                 for (const r of rows) {
                     await pool.query(
-                        `INSERT INTO courses (course_code, course_title, lecturer_name, units) 
-                         VALUES ($1, $2, $3, $4) 
-                         ON CONFLICT (course_code) DO UPDATE SET lecturer_name = EXCLUDED.lecturer_name`,
-                        [r.course_code, r.course_title, r.lecturer, r.units || 2]
+                        `INSERT INTO courses (course_code, course_title, lecturer_name, units, course_type) 
+                         VALUES ($1, $2, $3, $4, $5) 
+                         ON CONFLICT (course_code) 
+                         DO UPDATE SET 
+                            course_title = EXCLUDED.course_title,
+                            lecturer_name = EXCLUDED.lecturer_name,
+                            units = EXCLUDED.units,
+                            course_type = EXCLUDED.course_type`,
+                        [
+                            r.course_code.toUpperCase().trim(), 
+                            r.course_title, 
+                            r.lecturer || r.lecturer_name, 
+                            r.units || 2,
+                            r.course_type || 'Compulsory' // Defaults to Compulsory if column is missing in CSV
+                        ]
                     );
                 }
-                fs.unlinkSync(req.file.path);
-                res.redirect('/admin/courses');
+                // ✅ No fs.unlinkSync needed for memory storage
+                res.redirect('/admin/courses?success=true');
             } catch (err) {
-                res.status(500).send("Bulk upload failed.");
+                console.error("Bulk upload error:", err);
+                res.status(500).send("Bulk upload failed: " + err.message);
             }
         });
 });
@@ -435,6 +510,20 @@ app.post('/admin/timetable/save', async (req, res) => {
         res.redirect('/admin/timetable');
     } catch (err) {
         res.status(500).send("Scheduling Error: " + err.message);
+    }
+});
+
+app.get('/admin/timetable/delete', async (req, res) => {
+    const { day, time } = req.query;
+    try {
+        await pool.query(
+            "DELETE FROM timetable WHERE day_of_week = $1 AND time_slot = $2", 
+            [day, time]
+        );
+        res.redirect('/admin/timetable'); // Refresh the page
+    } catch (err) {
+        console.error(err);
+        res.status(500).send("Error clearing slot");
     }
 });
 
@@ -491,23 +580,32 @@ app.post('/admin/results/save', async (req, res) => {
     let test = parseInt(test_score) || 0;
     let exam = parseInt(exam_score) || 0;
     
-    // If you typed a "Total" manually in the form, use it. 
-    // Otherwise, sum the test and exam.
+    // Calculate final score
     let finalTotal = parseInt(total_score) || (test + exam);
 
-    // Calculate Grade/GP on the finalTotal
+    // Calculate Grade/GP
     const { grade, gp } = calculateGP(finalTotal);
 
     try {
         await pool.query(
-            `INSERT INTO results (student_matric, course_code, test_score, exam_score, score, grade, gp, academic_session, semester) 
+            `INSERT INTO results (
+                student_matric, course_code, test_score, exam_score, 
+                score, grade, gp, academic_session, semester
+            ) 
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-             ON CONFLICT (student_matric, course_code, academic_session) 
-             DO UPDATE SET test_score = EXCLUDED.test_score, exam_score = EXCLUDED.exam_score, score = EXCLUDED.score, grade = EXCLUDED.grade, gp = EXCLUDED.gp`,
+             -- MUST MATCH THE EXACT COLUMNS IN YOUR UNIQUE CONSTRAINT --
+             ON CONFLICT (student_matric, course_code, academic_session, semester) 
+             DO UPDATE SET 
+                test_score = EXCLUDED.test_score, 
+                exam_score = EXCLUDED.exam_score, 
+                score = EXCLUDED.score, 
+                grade = EXCLUDED.grade, 
+                gp = EXCLUDED.gp`,
             [student_matric, course_code, test, exam, finalTotal, grade, gp, session, semester]
         );
         res.redirect('/admin/results');
     } catch (err) {
+        console.error(err);
         res.status(500).send("Error: " + err.message);
     }
 });
@@ -524,22 +622,34 @@ app.post('/admin/results/bulk', upload.single('csvFile'), (req, res) => {
                     const exam = parseInt(r.exam_score) || 0;
                     const total = test + exam;
                     
-                    // Calculate Grade and GP based on TOTAL only
+                    // Calculate Grade and GP
                     const { grade, gp } = calculateGP(total);
 
                     await pool.query(
-                        `INSERT INTO results (student_matric, course_code, test_score, exam_score, score, grade, gp, academic_session, semester) 
+                        `INSERT INTO results (
+                            student_matric, course_code, test_score, exam_score, 
+                            score, grade, gp, academic_session, semester
+                        ) 
                          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) 
-                         ON CONFLICT (student_matric, course_code, academic_session) 
-                         DO UPDATE SET test_score = EXCLUDED.test_score, exam_score = EXCLUDED.exam_score, score = EXCLUDED.score, grade = EXCLUDED.grade, gp = EXCLUDED.gp`,
+                         -- UPDATED TO MATCH YOUR 4-COLUMN UNIQUE CONSTRAINT --
+                         ON CONFLICT (student_matric, course_code, academic_session, semester) 
+                         DO UPDATE SET 
+                            test_score = EXCLUDED.test_score, 
+                            exam_score = EXCLUDED.exam_score, 
+                            score = EXCLUDED.score, 
+                            grade = EXCLUDED.grade, 
+                            gp = EXCLUDED.gp`,
                         [r.matric, r.course_code, test, exam, total, grade, gp, r.session, r.semester]
                     );
                 }
-                fs.unlinkSync(req.file.path);
-                res.redirect('/admin/results');
+                
+                // Cleanup file after processing
+                if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+                res.redirect('/admin/results?success=Bulk upload completed');
             } catch (err) {
-                console.error(err);
-                res.status(500).send("Bulk upload failed.");
+                console.error("Bulk Upload Error:", err);
+                if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+                res.status(500).send("Bulk upload failed: " + err.message);
             }
         });
 });
@@ -649,35 +759,128 @@ app.get('/timetable', async (req, res) => {
         res.status(500).send("Error loading data.");
     }
 });
-// 1. View all courses
-app.get('/courses', async (req, res) => {
+async function autoRegisterCompulsory(studentId) {
     try {
-        const result = await pool.query('SELECT * FROM courses ORDER BY course_code ASC');
+        // Find all Compulsory/Required codes
+        const compulsory = await db.query(
+            "SELECT course_code FROM courses WHERE course_type IN ('Compulsory', 'Required')"
+        );
+
+        // Map them into a query that inserts all at once
+        for (let course of compulsory.rows) {
+            await db.query(
+                `INSERT INTO enrollments (student_id, course_code, is_auto_locked) 
+                 VALUES ($1, $2, true) 
+                 ON CONFLICT (student_id, course_code) DO NOTHING`, 
+                [studentId, course.course_code]
+            );
+        }
+        console.log(`Auto-enrolled student ${studentId} in compulsory courses.`);
+    } catch (err) {
+        console.error("Auto-registration failed:", err);
+    }
+}
+app.get('/courses', async (req, res) => {
+    // 1. Ensure user is logged in
+    if (!req.session.user) return res.redirect('/login');
+    
+    const studentId = req.session.user.id;
+
+    try {
+        // 2. We use LEFT JOIN so we see EVERY course, even if not enrolled
+        const query = `
+            SELECT c.*, 
+            CASE WHEN e.student_id IS NOT NULL THEN 1 ELSE 0 END as is_enrolled
+            FROM courses c
+            LEFT JOIN enrollments e ON c.course_code = e.course_code AND e.student_id = $1
+            ORDER BY c.course_code ASC`;
+
+        // FIX: Changed 'db.query' to 'pool.query'
+        const result = await pool.query(query, [studentId]);
+        
         res.render('courses', { 
-            courses: result.rows, 
-            user: req.session.user || null 
+            courses: result.rows,
+            user: req.session.user
         });
     } catch (err) {
-        console.error("Error fetching courses:", err);
+        console.error("Error fetching courses:", err.message);
         res.status(500).send("Database Error");
     }
 });
 
-// 2. Add a new course (POST)
-// Add a new course (Updated for Units)
 app.post('/add-course', async (req, res) => {
-    const { course_code, course_title, lecturer, units } = req.body;
+    const { course_code, course_title, units, lecturer, course_type } = req.body;
     try {
         await pool.query(
-            'INSERT INTO courses (course_code, course_title, lecturer, units) VALUES ($1, $2, $3, $4)',
-            [course_code, course_title, lecturer, units]
+            `INSERT INTO courses (course_code, course_title, units, lecturer, course_type) 
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (course_code) DO UPDATE 
+             SET course_title = $2, units = $3, lecturer = $4, course_type = $5`,
+            [course_code.toUpperCase(), course_title, units, lecturer, course_type]
         );
         res.redirect('/courses');
     } catch (err) {
-        console.error("Error adding course:", err);
-        res.status(500).send("Error saving course. Check if code is unique.");
+        console.error("Save Error:", err);
+        res.status(500).send("Make sure your database has the 'course_type' column!");
     }
 });
+
+app.post('/enroll-course/:code', async (req, res) => {
+    const courseCode = req.params.code;
+    const { action } = req.body;
+    
+    // Ensure this matches how you store ID in login (usually req.session.user.id)
+    const studentId = req.session.user ? req.session.user.id : null; 
+
+    if (!studentId) {
+        return res.json({ success: false, message: "Please log in first" });
+    }
+
+    try {
+        if (action === 'add') {
+            // FIX 1: Changed 'db' to 'pool'
+            // FIX 2: Use Postgres '$1' placeholders
+            // FIX 3: Use 'ON CONFLICT DO NOTHING' for Postgres
+            await pool.query(
+                "INSERT INTO enrollments (student_id, course_code) VALUES ($1, $2) ON CONFLICT DO NOTHING", 
+                [studentId, courseCode]
+            );
+        } else {
+            // FIX 1: Changed 'db' to 'pool'
+            // FIX 2: Use Postgres '$1' placeholders
+            await pool.query(
+                "DELETE FROM enrollments WHERE student_id = $1 AND course_code = $2", 
+                [studentId, courseCode]
+            );
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Enrollment Error:", err.message);
+        res.status(500).json({ success: false, message: "Database Error" });
+    }
+});
+
+app.get('/my-registered-courses', async (req, res) => {
+    if (!req.session.user) return res.redirect('/login');
+
+    const studentId = req.session.user.id;
+
+    try {
+        const query = `
+            SELECT c.*, e.is_auto_locked 
+            FROM courses c
+            JOIN enrollments e ON c.course_code = e.course_code
+            WHERE e.student_id = $1
+            ORDER BY c.course_code ASC`;
+
+        const result = await db.query(query, [studentId]);
+        res.render('my_registered_courses', { courses: result.rows });
+    } catch (err) {
+        console.error("Error fetching registered courses:", err);
+        res.status(500).send("Database Error");
+    }
+});
+
 app.get('/materials', async (req, res) => {
     try {
         const materialsRes = await pool.query('SELECT * FROM materials ORDER BY upload_date DESC');
@@ -729,6 +932,19 @@ app.post('/upload-material', async (req, res) => {
         console.error("Upload Error:", err);
         res.status(500).send("Database Error: Check if the course code exists in the courses table.");
     }
+});
+
+
+app.get('/profile', (req, res) => {
+    // Check if user is logged in
+    if (!req.session.user) {
+        return res.redirect('/login');
+    }
+
+    // Pass the user object to the EJS template
+    res.render('profile', { 
+        user: req.session.user 
+    });
 });
 
 app.listen(3000, () => console.log('Portal live at http://localhost:3000'));

@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile | <%= user.name %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary: #2563eb;
+            --secondary: #64748b;
+            --success: #10b981;
+            --danger: #ef4444;
+            --bg: #f1f5f9;
+            --card-bg: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #1e293b;
+        }
+
+        .profile-container {
+            width: 100%;
+            max-width: 550px;
+            padding: 20px;
+        }
+
+        .profile-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+            padding: 40px;
+            position: relative;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .avatar-circle {
+            width: 110px;
+            height: 110px;
+            background: linear-gradient(135deg, var(--primary), #60a5fa);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin: 0 auto 15px;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.3);
+            text-transform: uppercase;
+        }
+
+        .profile-header h1 {
+            margin: 10px 0 5px;
+            font-size: 1.8rem;
+            color: #0f172a;
+        }
+
+        .role-badge {
+            background: #dbeafe;
+            color: var(--primary);
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 30px;
+        }
+
+        .info-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 16px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: transform 0.2s;
+        }
+
+        .info-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .info-card i {
+            color: var(--primary);
+            font-size: 1.25rem;
+            width: 25px;
+            text-align: center;
+        }
+
+        .info-content label {
+            display: block;
+            font-size: 0.7rem;
+            color: var(--secondary);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        .info-content p {
+            margin: 2px 0 0;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .cgpa-highlight {
+            color: var(--success) !important;
+            font-size: 1.1rem !important;
+        }
+
+        .profile-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 25px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .btn-back {
+            text-decoration: none;
+            color: var(--secondary);
+            font-weight: 600;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-back:hover {
+            color: var(--primary);
+        }
+
+        .btn-logout {
+            background: #fee2e2;
+            color: var(--danger);
+            padding: 10px 24px;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        @media (max-width: 480px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="profile-container">
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="avatar-circle">
+                    <%= user.name ? user.name.split(' ').map(n => n[0]).join('') : 'U' %>
+                </div>
+                <h1><%= user.name %></h1>
+                <span class="role-badge"><%= user.role || 'Student' %></span>
+            </div>
+
+            <div class="info-grid">
+                <div class="info-card">
+                    <i class="fas fa-envelope"></i>
+                    <div class="info-content">
+                        <label>Email</label>
+                        <p><%= user.email || 'N/A' %></p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <i class="fas fa-fingerprint"></i>
+                    <div class="info-content">
+                        <label>Matric No</label>
+                        <p><%= user.matric || 'N/A' %></p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <i class="fas fa-graduation-cap"></i>
+                    <div class="info-content">
+                        <label>Current Level</label>
+                        <p><%= user.level || 'Unknown' %> Level</p>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <i class="fas fa-star"></i>
+                    <div class="info-content">
+                        <label>CGPA</label>
+                        <p class="cgpa-highlight">
+                            <%= user.cgpa ? parseFloat(user.cgpa).toFixed(2) : '0.00' %>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-footer">
+                <a href="/dashboard" class="btn-back">
+                    <i class="fas fa-chevron-left"></i> Back
+                </a>
+                <a href="/logout" class="btn-logout">Sign Out</a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>
